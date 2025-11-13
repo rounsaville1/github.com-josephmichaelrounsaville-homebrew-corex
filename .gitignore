@@ -1,0 +1,96 @@
+# R-COREX Bitcoin Mainnet System
+# Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+.env.production
+*.secret
+
+# Logs
+logs/
+*.log
+log/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Bitcoin Data
+.bitcoin/
+bitcoin-data/
+
+# Docker volumes
+postgres-data/
+redis-data/
+neo4j-data/
+prometheus-data/
+grafana-data/
+
+# Test Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Documentation Build
+docs/_build/
+site/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Package Files
+RCOREX_Holo5D.pkg
+
+# Sensitive Data
+*password*
+*secret*
+*private*
+*.pem
+*.key
+wallet.dat

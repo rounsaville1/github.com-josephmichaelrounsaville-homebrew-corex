@@ -1,0 +1,194 @@
+# R-COREX Bitcoin Mainnet System
+# Docker Compose Configuration
+# Author: Joseph Michael Rounsaville
+
+version: '3.8'
+
+services:
+  # Bitcoin Core Node (Mainnet)
+  bitcoin-core:
+    image: bitcoin/bitcoin:26.0
+    container_name: rcorex-bitcoin-node
+    restart: unless-stopped
+    ports:
+      - "8332:8332"  # RPC port
+      - "8333:8333"  # P2P port
+    volumes:
+      - bitcoin-data:/home/bitcoin/.bitcoin
+    environment:
+      - BITCOIN_DATA=/home/bitcoin/.bitcoin
+    command: >
+      bitcoind
+      -server=1
+      -rest=1
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcoin
+      -rpcpassword=bitcoin
+      -txindex=1
+      -printtoconsole=1
+    networks:
+      - rcorex-network
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "getblockchaininfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: rcorex-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      - POSTGRES_DB=bitcoin_mainnet
+      - POSTGRES_USER=bitcoin
+      - POSTGRES_PASSWORD=bitcoin
+    networks:
+      - rcorex-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bitcoin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: rcorex-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - rcorex-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Neo4j Graph Database (Optional)
+  neo4j:
+    image: neo4j:5
+    container_name: rcorex-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j-data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/bitcoin123
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+    networks:
+      - rcorex-network
+    profiles:
+      - full  # Only start with --profile full
+
+  # API Server
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rcorex-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./logs:/app/logs
+    environment:
+      - BITCOIN_RPC_HOST=bitcoin-core
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=bitcoin
+      - BITCOIN_RPC_PASSWORD=bitcoin
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=bitcoin_mainnet
+      - POSTGRES_USER=bitcoin
+      - POSTGRES_PASSWORD=bitcoin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    depends_on:
+      bitcoin-core:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rcorex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rcorex-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - rcorex-network
+    profiles:
+      - monitoring
+
+  # Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rcorex-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=bitcoin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - rcorex-network
+    profiles:
+      - monitoring
+
+volumes:
+  bitcoin-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  neo4j-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  rcorex-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

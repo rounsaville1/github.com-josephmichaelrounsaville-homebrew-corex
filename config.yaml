@@ -1,0 +1,279 @@
+# R-COREX Bitcoin Mainnet System Configuration
+# Author: Joseph Michael Rounsaville
+
+# Bitcoin Core Node Configuration
+bitcoin:
+  # RPC Connection Settings
+  rpc:
+    host: "127.0.0.1"
+    port: 8332  # 8332 for mainnet, 18332 for testnet
+    user: "bitcoin"
+    password: "bitcoin"  # Change in production!
+    timeout: 30
+
+  # Network
+  network: "mainnet"  # mainnet, testnet, regtest
+
+  # Node Requirements
+  requirements:
+    min_version: 260000  # Bitcoin Core 26.0.0
+    min_connections: 8
+    max_sync_lag_blocks: 2
+
+# API Server Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+
+  # CORS Settings
+  cors:
+    enabled: true
+    allow_origins:
+      - "*"  # Configure for production
+    allow_methods:
+      - "GET"
+      - "POST"
+
+  # Rate Limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+    requests_per_hour: 1000
+
+  # Authentication
+  auth:
+    enabled: false  # Set to true in production
+    jwt_secret: "change-this-secret-in-production"
+    api_keys_enabled: true
+
+# Database Configuration
+database:
+  # PostgreSQL (Main blockchain index)
+  postgres:
+    host: "localhost"
+    port: 5432
+    database: "bitcoin_mainnet"
+    user: "bitcoin"
+    password: "bitcoin"
+    pool_size: 20
+    max_overflow: 40
+
+  # Redis (Cache)
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    password: null
+    cache_ttl: 300  # 5 minutes
+
+  # TimescaleDB (Analytics)
+  timescale:
+    enabled: false
+    retention_days: 90
+
+  # Neo4j (Network Graph)
+  neo4j:
+    enabled: false
+    host: "localhost"
+    port: 7687
+    user: "neo4j"
+    password: "neo4j"
+
+# Blockchain Indexing
+indexing:
+  enabled: true
+  start_height: 0  # 0 to index from genesis, or specific block
+  batch_size: 100
+  workers: 4
+
+  # What to index
+  index_transactions: true
+  index_addresses: true
+  index_scripts: true
+  index_witness_data: true
+
+# Mempool Monitoring
+mempool:
+  enabled: true
+  poll_interval: 10  # seconds
+  max_tracked_transactions: 10000
+  fee_histogram_enabled: true
+
+# Network Graph
+network_graph:
+  enabled: true
+  max_depth: 5
+  max_nodes: 1000
+  peer_graph_enabled: true
+  tx_graph_enabled: true
+  address_graph_enabled: false  # Requires full indexing
+
+# Wallet Configuration
+wallet:
+  enabled: false  # Disable by default for security
+  type: "hd"  # hd, multisig, watch-only
+
+  # HD Wallet (BIP32/39/44)
+  hd:
+    mnemonic_strength: 256  # bits (256 = 24 words)
+    passphrase_enabled: true
+    derivation_path: "m/44'/0'/0'"  # BIP44 Bitcoin mainnet
+
+  # Multi-signature
+  multisig:
+    m: 2  # Required signatures
+    n: 3  # Total keys
+
+  # Security
+  security:
+    encryption: "aes256"
+    key_storage: "encrypted_file"  # encrypted_file, hsm, keystore
+    require_2fa: false
+
+# Analytics & Intelligence
+analytics:
+  enabled: true
+
+  # Fee Estimation
+  fee_estimation:
+    enabled: true
+    targets: [1, 3, 6, 12, 24, 48]  # blocks
+    algorithm: "smart"  # smart, conservative, economical
+
+  # Transaction Analysis
+  transaction_analysis:
+    pattern_detection: true
+    clustering: false
+    flow_analysis: false
+
+  # Network Health
+  network_health:
+    monitor_peers: true
+    monitor_propagation: true
+    alert_on_fork: true
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "json"  # json, text
+
+  # Log Files
+  files:
+    api: "logs/api.log"
+    bitcoin: "logs/bitcoin.log"
+    indexer: "logs/indexer.log"
+    error: "logs/error.log"
+
+  # Rotation
+  rotation:
+    max_size_mb: 100
+    backup_count: 10
+
+  # External Logging
+  external:
+    syslog_enabled: false
+    syslog_host: "localhost"
+    syslog_port: 514
+
+# Monitoring & Alerting
+monitoring:
+  enabled: true
+
+  # Prometheus
+  prometheus:
+    enabled: false
+    port: 9090
+    path: "/metrics"
+
+  # Health Checks
+  health_check:
+    interval: 60  # seconds
+    timeout: 10
+
+  # Alerts
+  alerts:
+    email_enabled: false
+    email_to: "admin@example.com"
+    email_from: "bitcoin-node@example.com"
+    smtp_host: "localhost"
+    smtp_port: 587
+
+    # Alert Conditions
+    conditions:
+      node_disconnected: true
+      sync_lagging: true
+      disk_space_low: true
+      high_error_rate: true
+
+# Security
+security:
+  # TLS/SSL
+  tls:
+    enabled: false
+    cert_file: "/path/to/cert.pem"
+    key_file: "/path/to/key.pem"
+
+  # Firewall
+  firewall:
+    whitelist_enabled: false
+    whitelist_ips: []
+    blacklist_ips: []
+
+  # DDoS Protection
+  ddos_protection:
+    enabled: true
+    max_requests_per_ip: 100
+    ban_duration: 3600  # seconds
+
+# Performance
+performance:
+  # Caching
+  cache:
+    enabled: true
+    strategy: "lru"  # lru, lfu, fifo
+    max_size_mb: 1024
+
+  # Database
+  database_pool_size: 20
+
+  # API
+  api_workers: 4
+  request_timeout: 30
+
+# Backup & Recovery
+backup:
+  enabled: false
+
+  # Blockchain Data
+  blockchain:
+    enabled: false
+    destination: "/backup/blockchain"
+    schedule: "daily"
+
+  # Database
+  database:
+    enabled: true
+    destination: "/backup/database"
+    schedule: "daily"
+    retention_days: 30
+
+  # Wallet
+  wallet:
+    enabled: true
+    destination: "/backup/wallet"
+    encrypted: true
+    schedule: "hourly"
+
+# Development
+development:
+  debug: false
+  hot_reload: false
+  mock_bitcoin_core: false
+  test_mode: false
+
+# Production
+production:
+  strict_mode: true
+  verbose_errors: false
+  maintenance_mode: false

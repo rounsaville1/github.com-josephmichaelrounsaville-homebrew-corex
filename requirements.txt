@@ -1,0 +1,57 @@
+# R-COREX Bitcoin Mainnet System
+# Python Dependencies
+
+# FastAPI - Modern web framework for building APIs
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Bitcoin Core Integration
+python-bitcoinlib==0.12.2
+bitcoinrpc==1.0
+
+# HTTP Client
+requests==2.31.0
+httpx==0.26.0
+
+# Database Drivers
+psycopg2-binary==2.9.9  # PostgreSQL
+redis==5.0.1  # Redis
+neo4j==5.16.0  # Neo4j (optional)
+
+# Cryptography
+pycryptodome==3.20.0
+ecdsa==0.18.0
+base58==2.1.1
+
+# Configuration
+pyyaml==6.0.1
+python-dotenv==1.0.1
+
+# Data Processing
+pandas==2.2.0  # Optional, for analytics
+numpy==1.26.3  # Optional, for analytics
+
+# Monitoring & Logging
+prometheus-client==0.19.0
+structlog==24.1.0
+
+# Security
+pyjwt==2.8.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2024.1
+
+# Development Tools (optional)
+pytest==8.0.0
+pytest-asyncio==0.23.4
+black==24.1.1
+flake8==7.0.0
+mypy==1.8.0
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.6
